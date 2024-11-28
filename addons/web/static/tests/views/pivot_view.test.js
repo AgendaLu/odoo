@@ -150,14 +150,9 @@ class Partner extends models.Model {
             company_type: "individual",
             ref: "product,41",
             parent_id: 1,
-            properties: [
-                {
-                    name: "my_char",
-                    string: "My Char",
-                    type: "char",
-                    value: "aaa",
-                },
-            ],
+            properties: {
+                my_char: "aaa",
+            },
         },
         {
             id: 3,
@@ -170,14 +165,9 @@ class Partner extends models.Model {
             company_type: "company",
             ref: "customer,1",
             parent_id: 1,
-            properties: [
-                {
-                    name: "my_char",
-                    string: "My Char",
-                    type: "char",
-                    value: "bbb",
-                },
-            ],
+            properties: {
+                my_char: "bbb",
+            },
         },
         {
             id: 4,
@@ -4541,4 +4531,91 @@ test("Close header dropdown when a simple date groupby option is selected", asyn
         "Count",
         "Count",
     ]);
+});
+
+test("missing property field definition is fetched", async function () {
+    onRpc(({ method, kwargs }) => {
+        if (method === "read_group" && kwargs.groupby?.includes("properties.my_char")) {
+            expect.step(JSON.stringify(kwargs.groupby));
+            return [
+                {
+                    "properties.my_char": false,
+                    __domain: [["properties.my_char", "=", false]],
+                    __count: 2,
+                },
+                {
+                    "properties.my_char": "aaa",
+                    __domain: [["properties.my_char", "=", "aaa"]],
+                    __count: 1,
+                },
+            ];
+        } else if (method === "get_property_definition") {
+            return {
+                name: "my_char",
+                type: "char",
+            };
+        }
+    });
+    await mountView({
+        type: "pivot",
+        resModel: "partner",
+        arch: `<pivot/>`,
+        irFilters: [
+            {
+                user_id: [2, "Mitchell Admin"],
+                name: "My Filter",
+                id: 5,
+                context: `{"group_by": ['properties.my_char']}`,
+                sort: "[]",
+                domain: "[]",
+                is_default: true,
+                model_id: "partner",
+                action_id: false,
+            },
+        ],
+    });
+    expect.verifySteps([`["properties.my_char"]`]);
+    expect(getCurrentValues()).toBe("4,2,1");
+});
+
+test("missing deleted property field definition is created", async function (assert) {
+    onRpc(({ method, kwargs }) => {
+        if (method === "read_group" && kwargs.groupby?.includes("properties.my_char")) {
+            expect.step(JSON.stringify(kwargs.groupby));
+            return [
+                {
+                    "properties.my_char": false,
+                    __domain: [["properties.my_char", "=", false]],
+                    __count: 2,
+                },
+                {
+                    "properties.my_char": "aaa",
+                    __domain: [["properties.my_char", "=", "aaa"]],
+                    __count: 1,
+                },
+            ];
+        } else if (method === "get_property_definition") {
+            return {};
+        }
+    });
+    await mountView({
+        type: "pivot",
+        resModel: "partner",
+        arch: `<pivot/>`,
+        irFilters: [
+            {
+                user_id: [2, "Mitchell Admin"],
+                name: "My Filter",
+                id: 5,
+                context: `{"group_by": ['properties.my_char']}`,
+                sort: "[]",
+                domain: "[]",
+                is_default: true,
+                model_id: "partner",
+                action_id: false,
+            },
+        ],
+    });
+    expect.verifySteps([`["properties.my_char"]`]);
+    expect(getCurrentValues()).toBe("4,2,1");
 });

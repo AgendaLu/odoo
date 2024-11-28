@@ -199,7 +199,7 @@ export class ProductProduct extends Base {
     }
 
     get searchString() {
-        const fields = ["display_name", "description_sale", "description", "default_code"];
+        const fields = ["display_name", "description_sale", "description"];
         return fields
             .map((field) => this[field] || "")
             .filter(Boolean)
@@ -241,6 +241,10 @@ export class ProductProduct extends Base {
             });
         });
         return isCombinationArchived;
+    }
+
+    get productDisplayName() {
+        return this.default_code ? `[${this.default_code}] ${this.name}` : this.name;
     }
 }
 registry.category("pos_available_models").add(ProductProduct.pythonModel, ProductProduct);
